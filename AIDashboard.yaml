@@ -1,0 +1,836 @@
+name: AI Dashboard
+updateFrequency: never
+timeSelector: {}
+sharedTimeInterval:
+  enabled: false
+  isLive: false
+  start: 1d
+seriesColorPalette: kestrel12
+widgets:
+  a80d22bc-8b2a-499b-a257-21e905647e6b:
+    x: 6
+    y: 5
+    height: 5
+    queryString: |-
+      defineTable(
+        name="userLookup",
+        query={
+          #repo = "base_sensor"
+          | "#event_simpleName" = ProcessRollup2
+          | UserName = *
+          | UserName != /\$$/ | UserName != /Local Service/i
+          | groupBy(aid, function=selectLast(UserName), limit=10000)
+        },
+        include=[aid, UserName]
+      )
+      | defineTable(
+        name="sprawlEndpoints",
+        query={
+          #repo = "base_sensor"
+          | "#event_simpleName" = DnsRequest
+          | RootDomain := DomainName
+          | RootDomain="*openai.com" OR
+            RootDomain="*chatgpt.com" OR
+            RootDomain="*ai.com" OR
+            RootDomain="*claude.ai" OR
+            RootDomain="*anthropic.com" OR
+            RootDomain="*perplexity.ai" OR
+            RootDomain="*x.ai" OR
+            RootDomain="*mistral.ai" OR
+            RootDomain="*gemini.google.com" OR
+            RootDomain="*aistudio.google.com" OR
+            RootDomain="*copilot.microsoft.com" OR
+            RootDomain="*copilot.azure.com" OR
+            RootDomain="*llama.meta.com" OR
+            RootDomain="*stability.ai" OR
+            RootDomain="*deepseek.com" OR
+            RootDomain="*chat.deepseek.com" OR
+            RootDomain="*huggingface.co" OR
+            RootDomain="*cohere.com" OR
+            RootDomain="*cohere.ai" OR
+            RootDomain="*inflection.ai" OR
+            RootDomain="*pi.ai" OR
+            RootDomain="*midjourney.com" OR
+            RootDomain="*runway.ml" OR
+            RootDomain="*runwayml.com" OR
+            RootDomain="*poe.com" OR
+            RootDomain="*you.com" OR
+            RootDomain="*character.ai" OR
+            RootDomain="*jasper.ai" OR
+            RootDomain="*writesonic.com" OR
+            RootDomain="*copy.ai" OR
+            RootDomain="*notion.ai" OR
+            RootDomain="*replit.com" OR
+            RootDomain="*cursor.com" OR
+            RootDomain="*cursor.sh" OR
+            RootDomain="*codeium.com" OR
+            RootDomain="*tabnine.com" OR
+            RootDomain="*github.com" OR
+            RootDomain="*suno.ai" OR
+            RootDomain="*udio.com" OR
+            RootDomain="*elevenlabs.io" OR
+            RootDomain="*descript.com" OR
+            RootDomain="*firefly.adobe.com" OR
+            RootDomain="*leonardo.ai" OR
+            RootDomain="*ideogram.ai" OR
+            RootDomain="*.ai"
+          | case {
+              RootDomain="*openai.com" OR RootDomain="*chatgpt.com" OR RootDomain="*ai.com" | Platform := "OpenAI" ;
+              RootDomain="*claude.ai" OR RootDomain="*anthropic.com" | Platform := "Anthropic" ;
+              RootDomain="*gemini.google.com" OR RootDomain="*aistudio.google.com" | Platform := "Google AI" ;
+              RootDomain="*copilot.microsoft.com" OR RootDomain="*copilot.azure.com" OR RootDomain="*github.com" | Platform := "Microsoft AI" ;
+              RootDomain="*deepseek.com" OR RootDomain="*chat.deepseek.com" | Platform := "DeepSeek" ;
+              RootDomain="*perplexity.ai" | Platform := "Perplexity" ;
+              RootDomain="*x.ai" | Platform := "xAI (Grok)" ;
+              RootDomain="*mistral.ai" | Platform := "Mistral" ;
+              RootDomain="*llama.meta.com" | Platform := "Meta AI" ;
+              RootDomain="*huggingface.co" | Platform := "Hugging Face" ;
+              RootDomain="*cohere.com" OR RootDomain="*cohere.ai" | Platform := "Cohere" ;
+              RootDomain="*inflection.ai" OR RootDomain="*pi.ai" | Platform := "Inflection (Pi)" ;
+              RootDomain="*stability.ai" OR RootDomain="*midjourney.com" OR RootDomain="*leonardo.ai" OR RootDomain="*ideogram.ai" OR RootDomain="*firefly.adobe.com" | Platform := "Image Generation" ;
+              RootDomain="*runway.ml" OR RootDomain="*runwayml.com" OR RootDomain="*descript.com" | Platform := "Video/Media AI" ;
+              RootDomain="*suno.ai" OR RootDomain="*udio.com" OR RootDomain="*elevenlabs.io" | Platform := "Audio AI" ;
+              RootDomain="*cursor.com" OR RootDomain="*cursor.sh" OR RootDomain="*codeium.com" OR RootDomain="*tabnine.com" OR RootDomain="*replit.com" | Platform := "AI Code Editors" ;
+              RootDomain="*poe.com" OR RootDomain="*you.com" OR RootDomain="*character.ai" | Platform := "AI Aggregators/Chat" ;
+              RootDomain="*jasper.ai" OR RootDomain="*writesonic.com" OR RootDomain="*copy.ai" OR RootDomain="*notion.ai" | Platform := "AI Writing Tools" ;
+              * | Platform := "Other (.ai domain)" ;
+            }
+          | groupBy(ComputerName, function=count(Platform, distinct=true, as="UniquePlatforms"), limit=10000)
+          | sort(UniquePlatforms, order=desc)
+          | head(10)
+        },
+        include=[ComputerName]
+      )
+      | #repo = "base_sensor"
+      | "#event_simpleName" = DnsRequest
+      | RootDomain := DomainName
+      | RootDomain="*openai.com" OR
+        RootDomain="*chatgpt.com" OR
+        RootDomain="*ai.com" OR
+        RootDomain="*claude.ai" OR
+        RootDomain="*anthropic.com" OR
+        RootDomain="*perplexity.ai" OR
+        RootDomain="*x.ai" OR
+        RootDomain="*mistral.ai" OR
+        RootDomain="*gemini.google.com" OR
+        RootDomain="*aistudio.google.com" OR
+        RootDomain="*copilot.microsoft.com" OR
+        RootDomain="*copilot.azure.com" OR
+        RootDomain="*llama.meta.com" OR
+        RootDomain="*stability.ai" OR
+        RootDomain="*deepseek.com" OR
+        RootDomain="*chat.deepseek.com" OR
+        RootDomain="*huggingface.co" OR
+        RootDomain="*cohere.com" OR
+        RootDomain="*cohere.ai" OR
+        RootDomain="*inflection.ai" OR
+        RootDomain="*pi.ai" OR
+        RootDomain="*midjourney.com" OR
+        RootDomain="*runway.ml" OR
+        RootDomain="*runwayml.com" OR
+        RootDomain="*poe.com" OR
+        RootDomain="*you.com" OR
+        RootDomain="*character.ai" OR
+        RootDomain="*jasper.ai" OR
+        RootDomain="*writesonic.com" OR
+        RootDomain="*copy.ai" OR
+        RootDomain="*notion.ai" OR
+        RootDomain="*replit.com" OR
+        RootDomain="*cursor.com" OR
+        RootDomain="*cursor.sh" OR
+        RootDomain="*codeium.com" OR
+        RootDomain="*tabnine.com" OR
+        RootDomain="*github.com" OR
+        RootDomain="*suno.ai" OR
+        RootDomain="*udio.com" OR
+        RootDomain="*elevenlabs.io" OR
+        RootDomain="*descript.com" OR
+        RootDomain="*firefly.adobe.com" OR
+        RootDomain="*leonardo.ai" OR
+        RootDomain="*ideogram.ai" OR
+        RootDomain="*.ai"
+      | case {
+          RootDomain="*openai.com" OR RootDomain="*chatgpt.com" OR RootDomain="*ai.com" | Platform := "OpenAI" ;
+          RootDomain="*claude.ai" OR RootDomain="*anthropic.com" | Platform := "Anthropic" ;
+          RootDomain="*gemini.google.com" OR RootDomain="*aistudio.google.com" | Platform := "Google AI" ;
+          RootDomain="*copilot.microsoft.com" OR RootDomain="*copilot.azure.com" OR RootDomain="*github.com" | Platform := "Microsoft AI" ;
+          RootDomain="*deepseek.com" OR RootDomain="*chat.deepseek.com" | Platform := "DeepSeek" ;
+          RootDomain="*perplexity.ai" | Platform := "Perplexity" ;
+          RootDomain="*x.ai" | Platform := "xAI (Grok)" ;
+          RootDomain="*mistral.ai" | Platform := "Mistral" ;
+          RootDomain="*llama.meta.com" | Platform := "Meta AI" ;
+          RootDomain="*huggingface.co" | Platform := "Hugging Face" ;
+          RootDomain="*cohere.com" OR RootDomain="*cohere.ai" | Platform := "Cohere" ;
+          RootDomain="*inflection.ai" OR RootDomain="*pi.ai" | Platform := "Inflection (Pi)" ;
+          RootDomain="*stability.ai" OR RootDomain="*midjourney.com" OR RootDomain="*leonardo.ai" OR RootDomain="*ideogram.ai" OR RootDomain="*firefly.adobe.com" | Platform := "Image Generation" ;
+          RootDomain="*runway.ml" OR RootDomain="*runwayml.com" OR RootDomain="*descript.com" | Platform := "Video/Media AI" ;
+          RootDomain="*suno.ai" OR RootDomain="*udio.com" OR RootDomain="*elevenlabs.io" | Platform := "Audio AI" ;
+          RootDomain="*cursor.com" OR RootDomain="*cursor.sh" OR RootDomain="*codeium.com" OR RootDomain="*tabnine.com" OR RootDomain="*replit.com" | Platform := "AI Code Editors" ;
+          RootDomain="*poe.com" OR RootDomain="*you.com" OR RootDomain="*character.ai" | Platform := "AI Aggregators/Chat" ;
+          RootDomain="*jasper.ai" OR RootDomain="*writesonic.com" OR RootDomain="*copy.ai" OR RootDomain="*notion.ai" | Platform := "AI Writing Tools" ;
+          * | Platform := "Other (.ai domain)" ;
+        }
+      | match(table="sprawlEndpoints", field=ComputerName, strict=true)
+      | match(table="userLookup", field=aid, strict=false)
+      | case {
+          UserName = * | EndpointLabel := format(format="%s (%s)", field=[ComputerName, UserName]) ;
+          * | EndpointLabel := ComputerName ;
+        }
+      | sankey(source=EndpointLabel, target=Platform)
+    end: now
+    start: 1d
+    width: 5
+    options:
+      seriesColorPalette: kestrel12
+    visualization: sankey
+    title: Top 10 - AI Platform Sprawl by Endpoint
+    isLive: false
+    type: query
+  57442949-7cd1-478a-93a2-68866a78265e:
+    x: 0
+    y: 16
+    height: 4
+    queryString: |-
+      #repo = "zscaler"
+      | "#event.dataset" = "zia.web"
+      | Vendor.hostname = /\.(openai\.com|chatgpt\.com|claude\.ai|anthropic\.com|perplexity\.ai|x\.ai|mistral\.ai|deepseek\.com|huggingface\.co|copilot\.microsoft\.com|copilot\.azure\.com|gemini\.google\.com|aistudio\.google\.com|cursor\.com|cursor\.sh|codeium\.com|cohere\.com|cohere\.ai|stability\.ai|midjourney\.com)$|\.ai$/i
+      | case {
+          Vendor.hostname = /openai\.com|chatgpt\.com/i | Platform := "OpenAI" ;
+          Vendor.hostname = /claude\.ai|anthropic\.com/i | Platform := "Anthropic" ;
+          Vendor.hostname = /gemini\.google\.com|aistudio\.google\.com/i | Platform := "Google AI" ;
+          Vendor.hostname = /copilot\.microsoft\.com|copilot\.azure\.com/i | Platform := "Microsoft Copilot" ;
+          Vendor.hostname = /deepseek\.com/i | Platform := "DeepSeek" ;
+          Vendor.hostname = /perplexity\.ai/i | Platform := "Perplexity" ;
+          Vendor.hostname = /cursor\.com|cursor\.sh|codeium\.com/i | Platform := "AI Code Editors" ;
+          Vendor.hostname = /huggingface\.co/i | Platform := "Hugging Face" ;
+          * | Platform := Vendor.hostname ;
+        }
+      | RequestMB := Vendor.requestsize / 1024 / 1024
+      | ResponseMB := Vendor.responsesize / 1024 / 1024
+      | groupBy([Vendor.user, Vendor.department, Platform], function=[sum(RequestMB, as="UploadMB"), sum(ResponseMB, as="DownloadMB"), count(as="Requests")])
+      | sort(UploadMB, order=desc, limit=25)
+      | table([Vendor.user, Vendor.department, Platform, Requests, UploadMB, DownloadMB])
+    end: now
+    start: 7d
+    width: 11
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: Data Transfer Volume to AI Platforms (Zscaler)
+    isLive: false
+    type: query
+  77189481-0e5d-4c20-ac5c-d489cf766b06:
+    x: 9
+    y: 10
+    height: 6
+    queryString: |-
+      #repo = "base_sensor"
+      | "#event_simpleName" = DnsRequest
+      | ContextBaseFileName != /^(ZSATunnel|chrome|claude|msedge|msedgewebview2|UiPath\.Executor|firefox|Code|Perplexity|ChatGPT|POWERPNT|Excel|OUTLOOK|Zscaler|Microsoft PowerPoint|UiPath)\.exe$/i
+      | DomainName != /visualstudio\.com/i
+      | RootDomain := DomainName
+      | RootDomain="*openai.com" OR
+        RootDomain="*chatgpt.com" OR
+        RootDomain="*ai.com" OR
+        RootDomain="*claude.ai" OR
+        RootDomain="*anthropic.com" OR
+        RootDomain="*perplexity.ai" OR
+        RootDomain="*x.ai" OR
+        RootDomain="*mistral.ai" OR
+        RootDomain="*gemini.google.com" OR
+        RootDomain="*aistudio.google.com" OR
+        RootDomain="*copilot.microsoft.com" OR
+        RootDomain="*copilot.azure.com" OR
+        RootDomain="*llama.meta.com" OR
+        RootDomain="*stability.ai" OR
+        RootDomain="*deepseek.com" OR
+        RootDomain="*chat.deepseek.com" OR
+        RootDomain="*huggingface.co" OR
+        RootDomain="*cohere.com" OR
+        RootDomain="*cohere.ai" OR
+        RootDomain="*inflection.ai" OR
+        RootDomain="*pi.ai" OR
+        RootDomain="*midjourney.com" OR
+        RootDomain="*runway.ml" OR
+        RootDomain="*runwayml.com" OR
+        RootDomain="*poe.com" OR
+        RootDomain="*you.com" OR
+        RootDomain="*character.ai" OR
+        RootDomain="*jasper.ai" OR
+        RootDomain="*writesonic.com" OR
+        RootDomain="*copy.ai" OR
+        RootDomain="*notion.ai" OR
+        RootDomain="*replit.com" OR
+        RootDomain="*cursor.com" OR
+        RootDomain="*cursor.sh" OR
+        RootDomain="*codeium.com" OR
+        RootDomain="*tabnine.com" OR
+        RootDomain="*github.com" OR
+        RootDomain="*suno.ai" OR
+        RootDomain="*udio.com" OR
+        RootDomain="*elevenlabs.io" OR
+        RootDomain="*descript.com" OR
+        RootDomain="*adobe.com/sensei" OR
+        RootDomain="*firefly.adobe.com" OR
+        RootDomain="*leonardo.ai" OR
+        RootDomain="*ideogram.ai" OR
+        RootDomain=/\.ai$/i
+      | rename(field="ContextBaseFileName", as="RequestFrom")
+      | groupby(RequestFrom)
+    visualization: pie-chart
+    end: now
+    start: 1d
+    width: 2
+    title: Unusual Binaries
+    isLive: false
+    type: query
+  19964ae6-22c1-421a-a2ac-a64491605f35:
+    x: 0
+    y: 0
+    height: 5
+    queryString: |-
+      #repo = "base_sensor"
+      | "#event_simpleName" = DnsRequest
+      | DomainName = /\.(openai\.com|chatgpt\.com|claude\.ai|anthropic\.com|perplexity\.ai|x\.ai|mistral\.ai|deepseek\.com|huggingface\.co|cohere\.com|cohere\.ai|inflection\.ai|pi\.ai|midjourney\.com|runway\.ml|runwayml\.com|poe\.com|you\.com|character\.ai|jasper\.ai|writesonic\.com|copy\.ai|notion\.ai|replit\.com|cursor\.com|cursor\.sh|codeium\.com|tabnine\.com|github\.com|suno\.ai|udio\.com|elevenlabs\.io|descript\.com|firefly\.adobe\.com|leonardo\.ai|ideogram\.ai|stability\.ai|llama\.meta\.com|copilot\.microsoft\.com|copilot\.azure\.com|gemini\.google\.com|aistudio\.google\.com)$|\.ai$/i
+      | case {
+          DomainName = /openai\.com|chatgpt\.com/i | Platform := "OpenAI" ;
+          DomainName = /claude\.ai|anthropic\.com/i | Platform := "Anthropic" ;
+          DomainName = /gemini\.google\.com|aistudio\.google\.com/i | Platform := "Google AI" ;
+          DomainName = /copilot\.microsoft\.com|copilot\.azure\.com/i | Platform := "Microsoft Copilot" ;
+          DomainName = /deepseek\.com/i | Platform := "DeepSeek" ;
+          DomainName = /perplexity\.ai/i | Platform := "Perplexity" ;
+          DomainName = /x\.ai/i | Platform := "xAI (Grok)" ;
+          DomainName = /cursor\.com|cursor\.sh|codeium\.com|tabnine\.com|replit\.com/i | Platform := "AI Code Editors" ;
+          * | Platform := "Other" ;
+        }
+      | timeChart(series=Platform, function=count())
+    end: now
+    start: 30d
+    width: 11
+    options:
+      series: {}
+      interpolation: natural
+      showOthers: true
+      connect-points: false
+      plotType: area
+      withLegendTitle: false
+      regression: false
+      seriesColorPalette: Humio category 20
+      titleSize: medium
+      imputation: none
+    visualization: time-chart
+    title: AI Platform Usage Over Time
+    isLive: false
+    type: query
+  eb99444a-c25b-47d1-835b-a9604987f6c5:
+    x: 3
+    y: 10
+    height: 6
+    queryString: |-
+      #repo = "base_sensor"
+      | "#event_simpleName" = DnsRequest
+      | RootDomain := DomainName
+      | RootDomain="*openai.com" OR
+        RootDomain="*chatgpt.com" OR
+        RootDomain="*ai.com" OR
+        RootDomain="*claude.ai" OR
+        RootDomain="*anthropic.com" OR
+        RootDomain="*perplexity.ai" OR
+        RootDomain="*x.ai" OR
+        RootDomain="*mistral.ai" OR
+        RootDomain="*gemini.google.com" OR
+        RootDomain="*aistudio.google.com" OR
+        RootDomain="*copilot.microsoft.com" OR
+        RootDomain="*copilot.azure.com" OR
+        RootDomain="*llama.meta.com" OR
+        RootDomain="*stability.ai" OR
+        RootDomain="*deepseek.com" OR
+        RootDomain="*chat.deepseek.com" OR
+        RootDomain="*huggingface.co" OR
+        RootDomain="*cohere.com" OR
+        RootDomain="*cohere.ai" OR
+        RootDomain="*inflection.ai" OR
+        RootDomain="*pi.ai" OR
+        RootDomain="*midjourney.com" OR
+        RootDomain="*runway.ml" OR
+        RootDomain="*runwayml.com" OR
+        RootDomain="*poe.com" OR
+        RootDomain="*you.com" OR
+        RootDomain="*character.ai" OR
+        RootDomain="*jasper.ai" OR
+        RootDomain="*writesonic.com" OR
+        RootDomain="*copy.ai" OR
+        RootDomain="*notion.ai" OR
+        RootDomain="*replit.com" OR
+        RootDomain="*cursor.com" OR
+        RootDomain="*cursor.sh" OR
+        RootDomain="*codeium.com" OR
+        RootDomain="*tabnine.com" OR
+        RootDomain="*github.com" OR
+        RootDomain="*suno.ai" OR
+        RootDomain="*udio.com" OR
+        RootDomain="*elevenlabs.io" OR
+        RootDomain="*descript.com" OR
+        RootDomain="*adobe.com/sensei" OR
+        RootDomain="*firefly.adobe.com" OR
+        RootDomain="*leonardo.ai" OR
+        RootDomain="*ideogram.ai" OR
+        RootDomain="*.ai"
+      | rename(field="ContextBaseFileName", as="RequestFrom")
+      | case {
+          RootDomain="*openai.com" OR RootDomain="*chatgpt.com" OR RootDomain="*ai.com" | Platform := "OpenAI" ;
+          RootDomain="*claude.ai" OR RootDomain="*anthropic.com" | Platform := "Anthropic" ;
+          RootDomain="*gemini.google.com" OR RootDomain="*aistudio.google.com" | Platform := "Google AI" ;
+          RootDomain="*copilot.microsoft.com" OR RootDomain="*copilot.azure.com" OR RootDomain="*github.com" | Platform := "Microsoft AI" ;
+          RootDomain="*deepseek.com" OR RootDomain="*chat.deepseek.com" | Platform := "DeepSeek" ;
+          RootDomain="*perplexity.ai" | Platform := "Perplexity" ;
+          RootDomain="*x.ai" | Platform := "xAI (Grok)" ;
+          RootDomain="*mistral.ai" | Platform := "Mistral" ;
+          RootDomain="*llama.meta.com" | Platform := "Meta AI" ;
+          RootDomain="*huggingface.co" | Platform := "Hugging Face" ;
+          RootDomain="*cohere.com" OR RootDomain="*cohere.ai" | Platform := "Cohere" ;
+          RootDomain="*inflection.ai" OR RootDomain="*pi.ai" | Platform := "Inflection (Pi)" ;
+          RootDomain="*stability.ai" OR RootDomain="*midjourney.com" OR RootDomain="*leonardo.ai" OR RootDomain="*ideogram.ai" OR RootDomain="*firefly.adobe.com" | Platform := "Image Generation" ;
+          RootDomain="*runway.ml" OR RootDomain="*runwayml.com" OR RootDomain="*descript.com" | Platform := "Video/Media AI" ;
+          RootDomain="*suno.ai" OR RootDomain="*udio.com" OR RootDomain="*elevenlabs.io" | Platform := "Audio AI" ;
+          RootDomain="*cursor.com" OR RootDomain="*cursor.sh" OR RootDomain="*codeium.com" OR RootDomain="*tabnine.com" OR RootDomain="*replit.com" | Platform := "AI Code Editors" ;
+          RootDomain="*poe.com" OR RootDomain="*you.com" OR RootDomain="*character.ai" | Platform := "AI Aggregators/Chat" ;
+          RootDomain="*jasper.ai" OR RootDomain="*writesonic.com" OR RootDomain="*copy.ai" OR RootDomain="*notion.ai" | Platform := "AI Writing Tools" ;
+          * | Platform := "Other (.ai domain)" ;
+        }
+      | groupby(Platform)
+    visualization: pie-chart
+    end: now
+    start: 1d
+    width: 3
+    title: Top Platforms
+    isLive: false
+    type: query
+  b0f9f922-d7f8-4452-ae79-6ae793452973:
+    x: 6
+    y: 10
+    height: 6
+    queryString: |-
+      defineTable(
+        name="totalCount",
+        query={
+          "#event_simpleName" = DnsRequest
+          | RootDomain := DomainName
+          | RootDomain="*openai.com" OR
+            RootDomain="*chatgpt.com" OR
+            RootDomain="*ai.com" OR
+            RootDomain="*claude.ai" OR
+            RootDomain="*anthropic.com" OR
+            RootDomain="*perplexity.ai" OR
+            RootDomain="*x.ai" OR
+            RootDomain="*mistral.ai" OR
+            RootDomain="*gemini.google.com" OR
+            RootDomain="*aistudio.google.com" OR
+            RootDomain="*copilot.microsoft.com" OR
+            RootDomain="*copilot.azure.com" OR
+            RootDomain="*llama.meta.com" OR
+            RootDomain="*stability.ai" OR
+            RootDomain="*deepseek.com" OR
+            RootDomain="*chat.deepseek.com" OR
+            RootDomain="*huggingface.co" OR
+            RootDomain="*cohere.com" OR
+            RootDomain="*cohere.ai" OR
+            RootDomain="*inflection.ai" OR
+            RootDomain="*pi.ai" OR
+            RootDomain="*midjourney.com" OR
+            RootDomain="*runway.ml" OR
+            RootDomain="*runwayml.com" OR
+            RootDomain="*poe.com" OR
+            RootDomain="*you.com" OR
+            RootDomain="*character.ai" OR
+            RootDomain="*jasper.ai" OR
+            RootDomain="*writesonic.com" OR
+            RootDomain="*copy.ai" OR
+            RootDomain="*notion.ai" OR
+            RootDomain="*replit.com" OR
+            RootDomain="*cursor.com" OR
+            RootDomain="*cursor.sh" OR
+            RootDomain="*codeium.com" OR
+            RootDomain="*tabnine.com" OR
+            RootDomain="*github.com" OR
+            RootDomain="*suno.ai" OR
+            RootDomain="*udio.com" OR
+            RootDomain="*elevenlabs.io" OR
+            RootDomain="*descript.com" OR
+            RootDomain="*firefly.adobe.com" OR
+            RootDomain="*leonardo.ai" OR
+            RootDomain="*ideogram.ai" OR
+            RootDomain="*.ai"
+          | count(as="TotalRequests")
+          | _joinKey := "all"
+        },
+        include=[_joinKey, TotalRequests]
+      )
+      | #repo = "base_sensor"
+      | "#event_simpleName" = DnsRequest
+      | RootDomain := DomainName
+      | RootDomain="*openai.com" OR
+        RootDomain="*chatgpt.com" OR
+        RootDomain="*ai.com" OR
+        RootDomain="*claude.ai" OR
+        RootDomain="*anthropic.com" OR
+        RootDomain="*perplexity.ai" OR
+        RootDomain="*x.ai" OR
+        RootDomain="*mistral.ai" OR
+        RootDomain="*gemini.google.com" OR
+        RootDomain="*aistudio.google.com" OR
+        RootDomain="*copilot.microsoft.com" OR
+        RootDomain="*copilot.azure.com" OR
+        RootDomain="*llama.meta.com" OR
+        RootDomain="*stability.ai" OR
+        RootDomain="*deepseek.com" OR
+        RootDomain="*chat.deepseek.com" OR
+        RootDomain="*huggingface.co" OR
+        RootDomain="*cohere.com" OR
+        RootDomain="*cohere.ai" OR
+        RootDomain="*inflection.ai" OR
+        RootDomain="*pi.ai" OR
+        RootDomain="*midjourney.com" OR
+        RootDomain="*runway.ml" OR
+        RootDomain="*runwayml.com" OR
+        RootDomain="*poe.com" OR
+        RootDomain="*you.com" OR
+        RootDomain="*character.ai" OR
+        RootDomain="*jasper.ai" OR
+        RootDomain="*writesonic.com" OR
+        RootDomain="*copy.ai" OR
+        RootDomain="*notion.ai" OR
+        RootDomain="*replit.com" OR
+        RootDomain="*cursor.com" OR
+        RootDomain="*cursor.sh" OR
+        RootDomain="*codeium.com" OR
+        RootDomain="*tabnine.com" OR
+        RootDomain="*github.com" OR
+        RootDomain="*suno.ai" OR
+        RootDomain="*udio.com" OR
+        RootDomain="*elevenlabs.io" OR
+        RootDomain="*descript.com" OR
+        RootDomain="*firefly.adobe.com" OR
+        RootDomain="*leonardo.ai" OR
+        RootDomain="*ideogram.ai" OR
+        RootDomain="*.ai"
+      | case {
+          RootDomain="*openai.com" OR RootDomain="*chatgpt.com" OR RootDomain="*ai.com" | Platform := "OpenAI" ;
+          RootDomain="*claude.ai" OR RootDomain="*anthropic.com" | Platform := "Anthropic" ;
+          RootDomain="*gemini.google.com" OR RootDomain="*aistudio.google.com" | Platform := "Google AI" ;
+          RootDomain="*copilot.microsoft.com" OR RootDomain="*copilot.azure.com" OR RootDomain="*github.com" | Platform := "Microsoft AI" ;
+          RootDomain="*deepseek.com" OR RootDomain="*chat.deepseek.com" | Platform := "DeepSeek" ;
+          RootDomain="*perplexity.ai" | Platform := "Perplexity" ;
+          RootDomain="*x.ai" | Platform := "xAI (Grok)" ;
+          RootDomain="*mistral.ai" | Platform := "Mistral" ;
+          RootDomain="*llama.meta.com" | Platform := "Meta AI" ;
+          RootDomain="*huggingface.co" | Platform := "Hugging Face" ;
+          RootDomain="*cohere.com" OR RootDomain="*cohere.ai" | Platform := "Cohere" ;
+          RootDomain="*inflection.ai" OR RootDomain="*pi.ai" | Platform := "Inflection (Pi)" ;
+          RootDomain="*stability.ai" OR RootDomain="*midjourney.com" OR RootDomain="*leonardo.ai" OR RootDomain="*ideogram.ai" OR RootDomain="*firefly.adobe.com" | Platform := "Image Generation" ;
+          RootDomain="*runway.ml" OR RootDomain="*runwayml.com" OR RootDomain="*descript.com" | Platform := "Video/Media AI" ;
+          RootDomain="*suno.ai" OR RootDomain="*udio.com" OR RootDomain="*elevenlabs.io" | Platform := "Audio AI" ;
+          RootDomain="*cursor.com" OR RootDomain="*cursor.sh" OR RootDomain="*codeium.com" OR RootDomain="*tabnine.com" OR RootDomain="*replit.com" | Platform := "AI Code Editors" ;
+          RootDomain="*poe.com" OR RootDomain="*you.com" OR RootDomain="*character.ai" | Platform := "AI Aggregators/Chat" ;
+          RootDomain="*jasper.ai" OR RootDomain="*writesonic.com" OR RootDomain="*copy.ai" OR RootDomain="*notion.ai" | Platform := "AI Writing Tools" ;
+          * | Platform := RootDomain ;
+        }
+      | groupBy(Platform, function=count(as="Requests"))
+      | _joinKey := "all"
+      | match(table="totalCount", field=_joinKey, strict=false)
+      | SharePct := (Requests / TotalRequests) * 100
+      | SharePct < 1
+      | sort(SharePct, order=asc)
+      | table([Platform, Requests, SharePct])
+    visualization: pie-chart
+    end: now
+    start: 1d
+    width: 3
+    title: Shadow AI - Rare Platform Usage(less than 1%)
+    isLive: false
+    type: query
+  28377afb-8b4b-465c-8781-d672bfca7814:
+    x: 0
+    y: 5
+    height: 5
+    queryString: |-
+      #repo = "base_sensor"
+      | "#event_simpleName" = DnsRequest
+      | RootDomain := DomainName
+      | RootDomain="*openai.com" OR
+        RootDomain="*chatgpt.com" OR
+        RootDomain="*ai.com" OR
+        RootDomain="*claude.ai" OR
+        RootDomain="*anthropic.com" OR
+        RootDomain="*perplexity.ai" OR
+        RootDomain="*x.ai" OR
+        RootDomain="*mistral.ai" OR
+        RootDomain="*gemini.google.com" OR
+        RootDomain="*aistudio.google.com" OR
+        RootDomain="*copilot.microsoft.com" OR
+        RootDomain="*copilot.azure.com" OR
+        RootDomain="*llama.meta.com" OR
+        RootDomain="*stability.ai" OR
+        RootDomain="*deepseek.com" OR
+        RootDomain="*chat.deepseek.com" OR
+        RootDomain="*huggingface.co" OR
+        RootDomain="*cohere.com" OR
+        RootDomain="*cohere.ai" OR
+        RootDomain="*inflection.ai" OR
+        RootDomain="*pi.ai" OR
+        RootDomain="*midjourney.com" OR
+        RootDomain="*runway.ml" OR
+        RootDomain="*runwayml.com" OR
+        RootDomain="*poe.com" OR
+        RootDomain="*you.com" OR
+        RootDomain="*character.ai" OR
+        RootDomain="*jasper.ai" OR
+        RootDomain="*writesonic.com" OR
+        RootDomain="*copy.ai" OR
+        RootDomain="*notion.ai" OR
+        RootDomain="*replit.com" OR
+        RootDomain="*cursor.com" OR
+        RootDomain="*cursor.sh" OR
+        RootDomain="*codeium.com" OR
+        RootDomain="*tabnine.com" OR
+        RootDomain="*github.com" OR
+        RootDomain="*suno.ai" OR
+        RootDomain="*udio.com" OR
+        RootDomain="*elevenlabs.io" OR
+        RootDomain="*descript.com" OR
+        RootDomain="*adobe.com/sensei" OR
+        RootDomain="*firefly.adobe.com" OR
+        RootDomain="*leonardo.ai" OR
+        RootDomain="*ideogram.ai" OR
+        RootDomain="*.ai"
+      | rename(field="ContextBaseFileName", as="RequestFrom")
+      | case {
+          RootDomain="*openai.com" OR RootDomain="*chatgpt.com" OR RootDomain="*ai.com" | Platform := "OpenAI" ;
+          RootDomain="*claude.ai" OR RootDomain="*anthropic.com" | Platform := "Anthropic" ;
+          RootDomain="*gemini.google.com" OR RootDomain="*aistudio.google.com" | Platform := "Google AI" ;
+          RootDomain="*copilot.microsoft.com" OR RootDomain="*copilot.azure.com" OR RootDomain="*github.com" | Platform := "Microsoft AI" ;
+          RootDomain="*deepseek.com" OR RootDomain="*chat.deepseek.com" | Platform := "DeepSeek" ;
+          RootDomain="*perplexity.ai" | Platform := "Perplexity" ;
+          RootDomain="*x.ai" | Platform := "xAI (Grok)" ;
+          RootDomain="*mistral.ai" | Platform := "Mistral" ;
+          RootDomain="*llama.meta.com" | Platform := "Meta AI" ;
+          RootDomain="*huggingface.co" | Platform := "Hugging Face" ;
+          RootDomain="*cohere.com" OR RootDomain="*cohere.ai" | Platform := "Cohere" ;
+          RootDomain="*inflection.ai" OR RootDomain="*pi.ai" | Platform := "Inflection (Pi)" ;
+          RootDomain="*stability.ai" OR RootDomain="*midjourney.com" OR RootDomain="*leonardo.ai" OR RootDomain="*ideogram.ai" OR RootDomain="*firefly.adobe.com" | Platform := "Image Generation" ;
+          RootDomain="*runway.ml" OR RootDomain="*runwayml.com" OR RootDomain="*descript.com" | Platform := "Video/Media AI" ;
+          RootDomain="*suno.ai" OR RootDomain="*udio.com" OR RootDomain="*elevenlabs.io" | Platform := "Audio AI" ;
+          RootDomain="*cursor.com" OR RootDomain="*cursor.sh" OR RootDomain="*codeium.com" OR RootDomain="*tabnine.com" OR RootDomain="*replit.com" | Platform := "AI Code Editors" ;
+          RootDomain="*poe.com" OR RootDomain="*you.com" OR RootDomain="*character.ai" | Platform := "AI Aggregators/Chat" ;
+          RootDomain="*jasper.ai" OR RootDomain="*writesonic.com" OR RootDomain="*copy.ai" OR RootDomain="*notion.ai" | Platform := "AI Writing Tools" ;
+          * | Platform := "Other (.ai domain)" ;
+        }
+      | sankey(source=RequestFrom, target=Platform)
+    visualization: sankey
+    end: now
+    start: 1d
+    width: 6
+    title: Generative AI Usage Map
+    isLive: false
+    type: query
+  b7059f5e-a4a2-4c3d-bcf8-e2a8716713fc:
+    x: 5
+    y: 24
+    height: 4
+    queryString: |-
+      #repo = "zscaler"
+      | "#event.dataset" = "zia.web"
+      | Vendor.hostname = /\.(openai\.com|chatgpt\.com|claude\.ai|anthropic\.com|perplexity\.ai|x\.ai|mistral\.ai|deepseek\.com|huggingface\.co|copilot\.microsoft\.com|copilot\.azure\.com|gemini\.google\.com|aistudio\.google\.com|cursor\.com|cursor\.sh|codeium\.com)$|\.ai$/i
+      | case {
+          Vendor.url = /\/v1\/|\/api\//i | UsageType := "API Call" ;
+          Vendor.url = /\/chat|\/conversation/i | UsageType := "Chat Interface" ;
+          Vendor.url = /\/upload|\/files|\/attachments/i | UsageType := "File Upload" ;
+          Vendor.url = /\/images|\/generation|\/dalle/i | UsageType := "Image Generation" ;
+          Vendor.url = /\/completions|\/messages/i | UsageType := "Completion API" ;
+          Vendor.url = /\/embeddings/i | UsageType := "Embeddings API" ;
+          Vendor.url = /\/search/i | UsageType := "Search" ;
+          * | UsageType := "Other/Browsing" ;
+        }
+      | groupBy([UsageType], function=[count(as="Requests"), count(Vendor.user, distinct=true, as="UniqueUsers")])
+      | sort(Requests, order=desc, limit=50)
+      | table([UsageType, Requests, UniqueUsers])
+    visualization: pie-chart
+    end: now
+    start: 7d
+    width: 3
+    title: AI Usage by URL Path Pattern
+    isLive: false
+    type: query
+  cb0d4383-7a4f-4b05-a7a9-24824bdb78d4:
+    x: 0
+    y: 20
+    height: 4
+    queryString: |-
+      #repo = "zscaler"
+      | "#event.dataset" = "zia.web"
+      | Vendor.hostname = /\.(openai\.com|chatgpt\.com|claude\.ai|anthropic\.com|perplexity\.ai|x\.ai|mistral\.ai|deepseek\.com|huggingface\.co|copilot\.microsoft\.com|copilot\.azure\.com|gemini\.google\.com|aistudio\.google\.com|cursor\.com|cursor\.sh|codeium\.com|cohere\.com|cohere\.ai|stability\.ai|midjourney\.com)$|\.ai$/i
+      | Vendor.dlpengine != "None"
+      | Vendor.dlpengine != ""
+      | Vendor.dlpengine = *
+      | groupBy([Vendor.user, Vendor.department, Vendor.hostname, Vendor.dlpengine, Vendor.dlpdictionaries], function=count(as="Triggers"))
+      | sort(Triggers, order=desc, limit=25)
+      | table([Vendor.user, Vendor.department, Vendor.hostname, Vendor.dlpengine, Vendor.dlpdictionaries, Triggers])
+    end: now
+    start: 7d
+    width: 11
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: DLP Triggers on AI Platforms
+    isLive: false
+    type: query
+  8fa2bfb4-473b-4713-ae75-dba77672ddeb:
+    x: 0
+    y: 10
+    height: 6
+    queryString: |-
+      #repo = "base_sensor"
+      | "#event_simpleName" = DnsRequest
+      | RootDomain := DomainName
+      | RootDomain="*openai.com" OR
+        RootDomain="*chatgpt.com" OR
+        RootDomain="*ai.com" OR
+        RootDomain="*claude.ai" OR
+        RootDomain="*anthropic.com" OR
+        RootDomain="*perplexity.ai" OR
+        RootDomain="*x.ai" OR
+        RootDomain="*mistral.ai" OR
+        RootDomain="*gemini.google.com" OR
+        RootDomain="*aistudio.google.com" OR
+        RootDomain="*copilot.microsoft.com" OR
+        RootDomain="*copilot.azure.com" OR
+        RootDomain="*llama.meta.com" OR
+        RootDomain="*stability.ai" OR
+        RootDomain="*deepseek.com" OR
+        RootDomain="*chat.deepseek.com" OR
+        RootDomain="*huggingface.co" OR
+        RootDomain="*cohere.com" OR
+        RootDomain="*cohere.ai" OR
+        RootDomain="*inflection.ai" OR
+        RootDomain="*pi.ai" OR
+        RootDomain="*midjourney.com" OR
+        RootDomain="*runway.ml" OR
+        RootDomain="*runwayml.com" OR
+        RootDomain="*poe.com" OR
+        RootDomain="*you.com" OR
+        RootDomain="*character.ai" OR
+        RootDomain="*jasper.ai" OR
+        RootDomain="*writesonic.com" OR
+        RootDomain="*copy.ai" OR
+        RootDomain="*notion.ai" OR
+        RootDomain="*replit.com" OR
+        RootDomain="*cursor.com" OR
+        RootDomain="*cursor.sh" OR
+        RootDomain="*codeium.com" OR
+        RootDomain="*tabnine.com" OR
+        RootDomain="*github.com" OR
+        RootDomain="*suno.ai" OR
+        RootDomain="*udio.com" OR
+        RootDomain="*elevenlabs.io" OR
+        RootDomain="*descript.com" OR
+        RootDomain="*firefly.adobe.com" OR
+        RootDomain="*leonardo.ai" OR
+        RootDomain="*ideogram.ai" OR
+        RootDomain="*.ai"
+      | groupBy(ComputerName, function=[count(as="Requests")])
+      | sort(Requests, order=desc, limit=10)
+      //| head(20)
+      //| table([ComputerName, Requests])
+    visualization: pie-chart
+    end: now
+    start: 1d
+    width: 3
+    title: Top 10 - AI Heavy Hitters by Endpoint
+    isLive: false
+    type: query
+  065e704e-84ea-474a-8777-c59607ac9084:
+    x: 8
+    y: 24
+    height: 4
+    queryString: |-
+      #repo = "zscaler"
+      | "#event.dataset" = "zia.web"
+      | Vendor.hostname = /\.(openai\.com|chatgpt\.com|claude\.ai|anthropic\.com|perplexity\.ai|x\.ai|mistral\.ai|deepseek\.com|huggingface\.co|copilot\.microsoft\.com|copilot\.azure\.com|gemini\.google\.com|aistudio\.google\.com|cursor\.com|cursor\.sh|codeium\.com)$|\.ai$/i
+      | Vendor.hostname != /visualstudio\.com/i
+      | case {
+          Vendor.hostname = /openai\.com|chatgpt\.com/i | Platform := "OpenAI" ;
+          Vendor.hostname = /claude\.ai|anthropic\.com/i | Platform := "Anthropic" ;
+          Vendor.hostname = /gemini\.google\.com|aistudio\.google\.com/i | Platform := "Google AI" ;
+          Vendor.hostname = /copilot\.microsoft\.com|copilot\.azure\.com/i | Platform := "Microsoft Copilot" ;
+          Vendor.hostname = /deepseek\.com/i | Platform := "DeepSeek" ;
+          Vendor.hostname = /perplexity\.ai/i | Platform := "Perplexity" ;
+          * | Platform := "Other AI" ;
+        }
+      | Day := formatTime(format="%Y-%m-%d", field=@timestamp)
+      | HourSlot := formatTime(format="%Y-%m-%d %H", field=@timestamp)
+      | groupBy([Vendor.user, Platform, Day], function=count(HourSlot, distinct=true, as="ActiveHours"))
+      | case {
+          ActiveHours <= 1 | UsageLevel := "1. Minimal (1 active hour)" ;
+          ActiveHours <= 3 | UsageLevel := "2. Light (2-3 active hours)" ;
+          ActiveHours <= 6 | UsageLevel := "3. Moderate (4-6 active hours)" ;
+          * | UsageLevel := "4. Heavy (7+ active hours)" ;
+        }
+      | groupBy(UsageLevel, function=[count(as="UserPlatformSessions"), count(Vendor.user, distinct=true, as="UniqueUsers")])
+      | sort(UsageLevel, order=asc, limit=50)
+      | table([UsageLevel, UserPlatformSessions, UniqueUsers])
+    visualization: pie-chart
+    end: now
+    start: 1d
+    width: 3
+    title: Active hours (at least 1 request/hour)
+    isLive: false
+    type: query
+  97e33c13-3159-4038-8030-c7ba13146b36:
+    x: 0
+    y: 24
+    height: 4
+    queryString: |-
+      #repo = "zscaler"
+      | "#event.dataset" = "zia.web"
+      | Vendor.hostname = /\.(openai\.com|chatgpt\.com|claude\.ai|anthropic\.com|perplexity\.ai|x\.ai|mistral\.ai|deepseek\.com|huggingface\.co|copilot\.microsoft\.com|copilot\.azure\.com|gemini\.google\.com|aistudio\.google\.com|cursor\.com|cursor\.sh|codeium\.com)$|\.ai$/i
+      | Vendor.requestmethod = "POST"
+      | Vendor.filetype != "None"
+      | Vendor.filetype != ""
+      | Vendor.filetype = *
+      | case {
+          Vendor.hostname = /openai\.com|chatgpt\.com/i | Platform := "OpenAI" ;
+          Vendor.hostname = /claude\.ai|anthropic\.com/i | Platform := "Anthropic" ;
+          Vendor.hostname = /gemini\.google\.com|aistudio\.google\.com/i | Platform := "Google AI" ;
+          Vendor.hostname = /copilot\.microsoft\.com|copilot\.azure\.com/i | Platform := "Microsoft Copilot" ;
+          Vendor.hostname = /deepseek\.com/i | Platform := "DeepSeek" ;
+          Vendor.hostname = /perplexity\.ai/i | Platform := "Perplexity" ;
+          * | Platform := "Other AI" ;
+        }
+      | case {
+          Vendor.filetype = /GZIP|ZST|ZIP/i AND Vendor.url = /\.(docx|xlsx|pptx|doc|xls|ppt)/i | FileCategory := "Office Document (compressed)" ;
+          Vendor.filetype = /GZIP|ZST|ZIP/i AND Vendor.contenttype = /officedocument|msword|ms-excel|ms-powerpoint/i | FileCategory := "Office Document (compressed)" ;
+          Vendor.filetype = /GZIP|ZST/i | FileCategory := "Likely Office (compressed data)" ;
+          Vendor.filetype = /ZIP/i | FileCategory := "ZIP Archive" ;
+          Vendor.filetype = /PDF/i | FileCategory := "PDF" ;
+          Vendor.filetype = /PNG|JPG|JPEG|GIF|SVG|WEBP/i | FileCategory := "Image" ;
+          Vendor.filetype = /CSV|TSV/i | FileCategory := "Spreadsheet Data" ;
+          Vendor.filetype = /JSON|XML/i | FileCategory := "Structured Data" ;
+          Vendor.filetype = /PY|JS|TS|JAVA|CPP|CS|GO|RS|SH|PS1/i | FileCategory := "Source Code" ;
+          Vendor.filetype = /TXT|MD|LOG/i | FileCategory := "Text File" ;
+          * | FileCategory := Vendor.filetype ;
+        }
+      | sankey(source=FileCategory, target=Platform)
+    visualization: sankey
+    end: now
+    start: 7d
+    width: 5
+    title: File Types Uploaded to AI Platforms
+    isLive: false
+    type: query
+$schema: https://schemas.humio.com/dashboard/v0.23.0
