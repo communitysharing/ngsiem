@@ -1,0 +1,72 @@
+ROLE: You are a senior detection engineer building production SIEM rules.
+
+TARGET SIEM: [YOUR SIEM AND QUERY LANGUAGE, e.g., "CrowdStrike NG-SIEM (LogScale/Humio QL)" or "Microsoft Sentinel (KQL)" or "Splunk Enterprise Security (SPL)" or "Google SecOps (YARA-L)" or "Elastic Security (ES|QL/EQL)"]
+
+AVAILABLE LOG SOURCES: [LIST YOUR LOG SOURCES, e.g., "Okta System Log, O365 Unified Audit Log" or "Okta via default parser, Google Workspace admin audit" — at minimum confirm Okta logs are available]
+
+TASK:
+
+1. RESEARCH — Read and deeply analyze these sources and every reference, IOC, and linked report within them:
+
+   PRIMARY:
+   - https://cloud.google.com/blog/topics/threat-intelligence/expansion-shinyhunters-saas-data-theft
+   - https://cloud.google.com/blog/topics/threat-intelligence/defense-against-shinyhunters-cybercrime-saas
+
+   SUPPORTING:
+   - https://www.okta.com/blog/threat-intelligence/phishing-kits-adapt-to-the-script-of-callers/
+   - https://www.virustotal.com/gui/collection/214da7a4bb12360a85e03a15da1ff74284e09651a33f4f760ee01230439c16af/iocs
+   - https://security.googlecloudcommunity.com/community-blog-42/new-to-google-secops-leveraging-okta-curated-detections-to-detect-shinyhunters-related-activity-6693
+
+   Extract from these sources:
+   - The complete attack chain (vishing → credential harvest → MFA enrollment → notification suppression → SaaS lateral movement → data exfiltration → extortion)
+   - All published IOCs: IP addresses, ASNs, phishing domain patterns, user-agent strings, email addresses, Tox IDs
+   - All named threat clusters: UNC6661, UNC6671, UNC6240
+   - Specific Okta event types, O365 event types, and log field values mentioned
+   - The Google SecOps detection rule names and hunting queries published in the blog posts
+   - Specific attacker tools and techniques: ToogleBox Recall, PowerShell-based SharePoint exfiltration, Salesforce Data Loader abuse, AiTM phishing proxy kits
+   - VPN/proxy providers used: Mullvad, Oxylabs, NetNut, 9Proxy, Infatica, nsocks
+   - Keyword searches attackers ran: "poc", "confidential", "internal", "proposal", "salesforce", "vpn"
+
+2. BUILD DETECTIONS — Generate a complete detection rule set covering every phase of the attack chain. For EACH rule, provide:
+
+   - Rule name (include "ShinyHunters" for tracking)
+   - Severity: CRITICAL / HIGH / MEDIUM
+   - MITRE ATT&CK technique ID
+   - Required log source(s)
+   - A 2-sentence description of what it detects and why it matters
+   - The complete query in my SIEM's native syntax (production-ready, not pseudocode)
+   - Recommended schedule (run frequency + lookback window)
+   - Tuning guidance (false positive reduction: whitelists, thresholds, exclusions)
+   - Response actions (what to do when it fires)
+
+   MINIMUM RULE COVERAGE (generate at least one rule per item):
+   a) IOC IP address match on Okta authentication
+   b) Authentication from known attacker VPN/proxy providers
+   c) Suspicious user-agent string (Geny Mobile)
+   d) New MFA factor enrollment (any context)
+   e) Rapid sequence: authentication → MFA enrollment within 15 min
+   f) Privileged/admin Okta actions from anonymized or proxy IPs
+   g) Admin role assignment
+   h) Deletion of MFA enrollment notification emails
+   i) Suspicious OAuth application authorization (especially ToogleBox Recall)
+   j) Bulk SSO access to multiple applications in a short window
+   k) SSO to high-value SaaS apps (Salesforce, SharePoint, DocuSign, Slack) from anomalous context
+   l) SharePoint/OneDrive file access or download via PowerShell user-agent
+   m) High-volume document access/download from SharePoint
+   n) MFA factor downgrade (FIDO2/WebAuthn deactivated)
+   o) Password reset from new location/device
+   p) Okta policy or network zone modification
+   q) COMPOSITE: full kill chain — auth + MFA enroll + SaaS pivot for same user within 60 min
+   r) COMPOSITE: failed auth burst followed by success from a different IP
+
+3. FORMAT — After the individual rules, provide:
+   - A summary table mapping each rule to its phase, severity, and schedule
+   - A MITRE ATT&CK mapping table for the full rule set
+   - An IOC appendix with all IPs, domain patterns, and user-agent strings in a format I can load into my SIEM's threat intel / watchlist / lookup table feature
+
+4. NOTES:
+   - Where a rule requires a log source I haven't confirmed, flag the dependency clearly
+   - Structure IOC lists for easy updates (lookup tables, arrays, or reference lists — not hardcoded inline)
+   - If my SIEM supports risk-based alerting, include risk score assignments
+   - If my SIEM supports normalized data models (CIM, ASIM, UDM, ECS), map fields accordingly
+   - For correlation rules, if my platform doesn't support native multi-event correlation, provide a scheduled search alternative
